@@ -1,2 +1,2 @@
-# homelab
+# Homelab
 🐈‍⬛  Melo's Homelab
