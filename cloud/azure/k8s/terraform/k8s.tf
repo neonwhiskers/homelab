@@ -8,6 +8,7 @@ resource "azurerm_kubernetes_cluster" "aks_k8s" {
     location            = azurerm_resource_group.rg_terraform.location
     resource_group_name = azurerm_resource_group.rg_terraform.name
     dns_prefix          = "catlab"
+    automatic_upgrade_channel = "stable"
 
     default_node_pool {
         name       = "npsystem"
