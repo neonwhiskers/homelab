@@ -7,21 +7,32 @@ on:
             - main
 env:
     STACKIT_TF_ENABLE_BETA_RESOURCES: true
+    STACKIT_SERVICE_ACCOUNT_KEY_PATH: stackit_credentials.json
 
 jobs:
     terraform_plan:
         name: "terraform plan"
         runs-on: ubuntu-latest
         steps:
-            - name: "checkout repo"
-              uses: actions/checkout@v4
-            - name: "install terraform"
-              uses: hashicorp/setup-terraform@v3
-              with:
-                  terraform_version: "1.11.1"
-            - name: "terraform init"
-              run: terraform init
-              working-directory: "cloud/stackit/server/terraform"
-              env:
-                  AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
-                  AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+            -   name: "checkout repo"
+                uses: actions/checkout@v4
+            -   name: "create service account key-file"
+                run: printf %s $STACKIT_SERVICE_ACCOUNT_KEY > $STACKIT_SERVICE_ACCOUNT_KEY_PATH
+                env:
+                    STACKIT_SERVICE_ACCOUNT_KEY: ${{secrets.STACKIT_SERVICE_ACCOUNT_KEY}}
+            -   name: "install terraform"
+                uses: hashicorp/setup-terraform@v3
+                with:
+                    terraform_version: "1.11.1"
+            -   name: "terraform init"
+                run: terraform init
+                working-directory: "cloud/stackit/server/terraform"
+                env:
+                    AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+                    AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+            -   name: "terraform plan"
+                run: terraform plan
+                working-directory: "cloud/stackit/server/terraform"
+                env:
+                    AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+                    AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
