@@ -18,6 +18,7 @@ jobs:
                 uses: actions/checkout@v4
             -   name: "create service account key-file"
                 run: printf %s $STACKIT_SERVICE_ACCOUNT_KEY > $STACKIT_SERVICE_ACCOUNT_KEY_PATH
+                working-directory: "cloud/stackit/server/terraform"
                 env:
                     STACKIT_SERVICE_ACCOUNT_KEY: ${{secrets.STACKIT_SERVICE_ACCOUNT_KEY}}
             -   name: "install terraform"
