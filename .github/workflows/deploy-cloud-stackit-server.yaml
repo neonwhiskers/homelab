@@ -7,7 +7,7 @@ on:
             - main
 env:
     STACKIT_TF_ENABLE_BETA_RESOURCES: true
-    STACKIT_SERVICE_ACCOUNT_KEY_PATH: stackit_credentials.json
+    STACKIT_SERVICE_ACCOUNT_KEY_PATH: ./stackit_credentials.json
 
 jobs:
     terraform_plan:
