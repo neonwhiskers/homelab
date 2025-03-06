@@ -9,10 +9,19 @@ env:
     STACKIT_TF_ENABLE_BETA_RESOURCES: true
     STACKIT_SERVICE_ACCOUNT_KEY_PATH: "./stackit_credentials.json"
 
+# Defines a concurrency group to ensure that multiple workflow runs for the same group
+# (e.g., changes to cloud/stackit/server/terraform) do not run simultaneously.
+# If a new workflow run starts while a previous one in the same group is still running,
+# the older run will be canceled.
+concurrency:
+    group: cloud/stackit/server/terraform
+
 jobs:
     terraform_plan:
         name: "terraform plan"
         runs-on: ubuntu-latest
+        outputs:
+            exitcode: ${{ steps.plan.outputs.exitcode }}
         steps:
             -   name: "checkout repo"
                 uses: actions/checkout@v4
@@ -32,7 +41,13 @@ jobs:
                     AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
                     AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
             -   name: "terraform plan"
+                id: plan
                 run: |
+                    # By default, GitHub Actions runs shell scripts with `set -e`, meaning workflows 
+                    # terminate as soon as a shell command returns an exit code other than 0. However, 
+                    # with `terraform plan -detailed-exitcode`, Terraform can return exit code 2 even when 
+                    # no error has occurred. To prevent GitHub Actions from stopping the workflow, `errexit` 
+                    # must be disabled using `set +e`.
                     set +e
                     terraform plan -out terraform.tfplan -detailed-exitcode -lock=false
                     exitcode=$?
@@ -42,7 +57,7 @@ jobs:
                 env:
                     AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
                     AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-            -   name: Upload Artifact terraform.tfplan
+            -   name: Upload Github Artifact terraform.tfplan
                 uses: actions/upload-artifact@v4
                 with:
                     name: terraform.tfplan
