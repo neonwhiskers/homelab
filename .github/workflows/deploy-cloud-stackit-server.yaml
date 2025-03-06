@@ -7,7 +7,7 @@ on:
             - main
 env:
     STACKIT_TF_ENABLE_BETA_RESOURCES: true
-    STACKIT_SERVICE_ACCOUNT_KEY_PATH: ./stackit_credentials.json
+    STACKIT_SERVICE_ACCOUNT_KEY_PATH: "./stackit_credentials.json"
 
 jobs:
     terraform_plan:
@@ -17,7 +17,7 @@ jobs:
             -   name: "checkout repo"
                 uses: actions/checkout@v4
             -   name: "create service account key-file"
-                run: printf %s $STACKIT_SERVICE_ACCOUNT_KEY > $STACKIT_SERVICE_ACCOUNT_KEY_PATH
+                run: printf %s "$STACKIT_SERVICE_ACCOUNT_KEY" > "$STACKIT_SERVICE_ACCOUNT_KEY_PATH"
                 working-directory: "cloud/stackit/server/terraform"
                 env:
                     STACKIT_SERVICE_ACCOUNT_KEY: ${{secrets.STACKIT_SERVICE_ACCOUNT_KEY}}
