@@ -4,10 +4,11 @@ locals {
 }
 
 resource "stackit_network" "melo_test_network" {
-  project_id  = data.stackit_resourcemanager_project.melo_test.project_id
-  name        = "melo-test-network"
-  ipv4_prefix = local.cidr_ipv4
-  ipv6_prefix = local.cidr_ipv6
+  project_id       = data.stackit_resourcemanager_project.melo_test.project_id
+  name             = "melo-test-network"
+  ipv4_prefix      = local.cidr_ipv4
+  ipv6_prefix      = local.cidr_ipv6
+  ipv4_nameservers = ["8.8.8.8", "8.8.4.4"]
 
   labels = local.labels
 }

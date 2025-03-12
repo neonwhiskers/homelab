@@ -10,6 +10,7 @@ locals {
   rules = {
     SSH   = 22
     HTTPS = 443
+    HTTP  = 80
   }
 }
 

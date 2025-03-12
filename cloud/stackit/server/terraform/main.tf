@@ -21,6 +21,11 @@ terraform {
       source  = "stackitcloud/stackit"
       version = ">= 0.43.3, < 1.0.0"
     }
+
+    cloudinit = {
+      source  = "hashicorp/cloudinit"
+      version = "2.3.6"
+    }
   }
 }
 

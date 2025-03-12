@@ -7,6 +7,7 @@ resource "stackit_server" "melo_server_with_network" {
   desired_status    = "active"
   project_id        = data.stackit_resourcemanager_project.melo_test.project_id
   name              = "melo-server"
+  user_data         = filebase64("${path.module}/cloud-init.yaml")
   boot_volume = {
     delete_on_termination = true
     size                  = 64
