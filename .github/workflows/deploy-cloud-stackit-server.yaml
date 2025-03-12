@@ -63,6 +63,7 @@ jobs:
                     name: terraform.tfplan
                     path: cloud/stackit/server/terraform/terraform.tfplan
     terraform_apply:
+        environment: STACKIT
         name: "terraform apply"
         runs-on: ubuntu-latest
         needs:
