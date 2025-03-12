@@ -42,6 +42,6 @@ locals {
   labels = {
     provisioner = "terraform"
     owner       = "melo"
-    project     = "first-test"
+    project     = "server"
   }
 }
