@@ -34,6 +34,7 @@ jobs:
                 uses: hashicorp/setup-terraform@v3
                 with:
                     terraform_version: "1.11.1"
+                    terraform_wrapper: false
             -   name: "terraform init"
                 run: terraform init
                 working-directory: "cloud/stackit/server/terraform"
@@ -81,6 +82,7 @@ jobs:
                 uses: hashicorp/setup-terraform@v3
                 with:
                     terraform_version: "1.11.1"
+                    terraform_wrapper: false
             -   name: "terraform init"
                 run: terraform init
                 working-directory: "cloud/stackit/server/terraform"
