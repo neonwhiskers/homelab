@@ -1,0 +1,27 @@
+#cloud-config
+# https://www.digitalocean.com/community/tutorials/how-to-use-cloud-config-for-your-initial-server-setup#using-cloud-config-files
+# updates and upgrades all packages to the latest versions
+package_update: true
+package_upgrade: true
+
+# installs nginx web server
+packages:
+  - nginx
+
+# https://cloudinit.readthedocs.io/en/latest/reference/examples.html#writing-out-arbitrary-files
+write_files:
+  - path: /var/www/html/index.html
+    content: |
+      <html>
+      <head><title>Willkommen auf StackIT</title></head>
+      <body><h1>Hallo von Nginx auf StackIT!</h1></body>
+      </html>
+    # sets the file owner to 'root' (user) and 'root' (group)
+    owner: root:root
+    # sets file permissions: owner can read & write, others can only read
+    permissions: '0644'
+
+# Ensures that nginx starts automatically on boot and immediately starts the nginx service
+runcmd:
+  - systemctl enable nginx
+  - systemctl start nginx

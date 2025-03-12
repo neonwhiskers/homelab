@@ -1,1 +1,5 @@
-.terraform
+.env
+
+# git rm --cached stackit_credentials.json
+stackit_credentials.json
+.terraform/

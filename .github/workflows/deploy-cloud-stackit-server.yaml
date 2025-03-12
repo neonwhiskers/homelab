@@ -1,0 +1,104 @@
+name: Deploy stackit/server
+on:
+    workflow_dispatch:
+
+    pull_request:
+        branches:
+            - main
+env:
+    STACKIT_TF_ENABLE_BETA_RESOURCES: true
+    STACKIT_SERVICE_ACCOUNT_KEY_PATH: "./stackit_credentials.json"
+
+# Defines a concurrency group to ensure that multiple workflow runs for the same group
+# (e.g., changes to cloud/stackit/server/terraform) do not run simultaneously.
+# If a new workflow run starts while a previous one in the same group is still running,
+# the older run will be canceled.
+concurrency:
+    group: cloud/stackit/server/terraform
+
+jobs:
+    terraform_plan:
+        name: "terraform plan"
+        runs-on: ubuntu-latest
+        outputs:
+            job_exitcode: ${{ steps.plan.outputs.plan_exitcode }}
+        steps:
+            -   name: "checkout repo"
+                uses: actions/checkout@v4
+            -   name: "create service account key-file"
+                run: printf %s "$STACKIT_SERVICE_ACCOUNT_KEY" > "$STACKIT_SERVICE_ACCOUNT_KEY_PATH"
+                working-directory: "cloud/stackit/server/terraform"
+                env:
+                    STACKIT_SERVICE_ACCOUNT_KEY: ${{secrets.STACKIT_SERVICE_ACCOUNT_KEY}}
+            -   name: "install terraform"
+                uses: hashicorp/setup-terraform@v3
+                with:
+                    terraform_version: "1.11.1"
+                    terraform_wrapper: false
+            -   name: "terraform init"
+                run: terraform init
+                working-directory: "cloud/stackit/server/terraform"
+                env:
+                    AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+                    AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+            -   name: "terraform plan"
+                id: plan
+                run: |
+                    # By default, GitHub Actions runs shell scripts with `set -e`, meaning workflows 
+                    # terminate as soon as a shell command returns an exit code other than 0. However, 
+                    # with `terraform plan -detailed-exitcode`, Terraform can return exit code 2 even when 
+                    # no error has occurred. To prevent GitHub Actions from stopping the workflow, `errexit` 
+                    # must be disabled using `set +e`.
+                    set +e
+                    terraform plan -out terraform.tfplan -detailed-exitcode -lock=false
+                    exitcode=$?
+                    [ "$exitcode" -ne 2 ] && [ "$exitcode" -ne 0 ] && exit $exitcode
+                    echo "plan_exitcode=$exitcode" >> $GITHUB_OUTPUT
+                working-directory: "cloud/stackit/server/terraform"
+                env:
+                    AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+                    AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+            -   name: Upload Github Artifact terraform.tfplan
+                uses: actions/upload-artifact@v4
+                with:
+                    name: terraform.tfplan
+                    path: cloud/stackit/server/terraform/terraform.tfplan
+    terraform_apply:
+        environment: STACKIT
+        name: "terraform apply"
+        runs-on: ubuntu-latest
+        if: ${{ needs.terraform_plan.outputs.job_exitcode == 2}}
+        needs:
+            - terraform_plan
+        steps:
+            -   name: "checkout repo"
+                uses: actions/checkout@v4
+            -   name: "create service account key-file"
+                run: printf %s "$STACKIT_SERVICE_ACCOUNT_KEY" > "$STACKIT_SERVICE_ACCOUNT_KEY_PATH"
+                working-directory: "cloud/stackit/server/terraform"
+                env:
+                    STACKIT_SERVICE_ACCOUNT_KEY: ${{secrets.STACKIT_SERVICE_ACCOUNT_KEY}}
+            -   name: "install terraform"
+                uses: hashicorp/setup-terraform@v3
+                with:
+                    terraform_version: "1.11.1"
+                    terraform_wrapper: false
+            -   name: "terraform init"
+                run: terraform init
+                working-directory: "cloud/stackit/server/terraform"
+                env:
+                    AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+                    AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+            -   name: Download Github Artifact terraform.tfplan
+                uses: actions/download-artifact@v4
+                with:
+                    name: terraform.tfplan
+                    path: cloud/stackit/server/terraform/
+            -   name: "terraform apply"
+                id: apply
+                run: |
+                    terraform apply -auto-approve -input=false terraform.tfplan
+                working-directory: "cloud/stackit/server/terraform"
+                env:
+                    AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+                    AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
