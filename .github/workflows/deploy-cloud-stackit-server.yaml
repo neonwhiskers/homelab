@@ -62,3 +62,46 @@ jobs:
                 with:
                     name: terraform.tfplan
                     path: cloud/stackit/server/terraform/terraform.tfplan
+    terraform_apply:
+        name: "terraform apply"
+        runs-on: ubuntu-latest
+        steps:
+            -   name: "checkout repo"
+                uses: actions/checkout@v4
+            -   name: "create service account key-file"
+                run: printf %s "$STACKIT_SERVICE_ACCOUNT_KEY" > "$STACKIT_SERVICE_ACCOUNT_KEY_PATH"
+                working-directory: "cloud/stackit/server/terraform"
+                env:
+                    STACKIT_SERVICE_ACCOUNT_KEY: ${{secrets.STACKIT_SERVICE_ACCOUNT_KEY}}
+            -   name: "install terraform"
+                uses: hashicorp/setup-terraform@v3
+                with:
+                    terraform_version: "1.11.1"
+            -   name: "terraform init"
+                run: terraform init
+                working-directory: "cloud/stackit/server/terraform"
+                env:
+                    AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+                    AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+            -   name: "terraform plan"
+                id: plan
+                run: |
+                    # By default, GitHub Actions runs shell scripts with `set -e`, meaning workflows 
+                    # terminate as soon as a shell command returns an exit code other than 0. However, 
+                    # with `terraform plan -detailed-exitcode`, Terraform can return exit code 2 even when 
+                    # no error has occurred. To prevent GitHub Actions from stopping the workflow, `errexit` 
+                    # must be disabled using `set +e`.
+                    set +e
+                    terraform plan -out terraform.tfplan -detailed-exitcode -lock=false
+                    exitcode=$?
+                    [ "$exitcode" -ne 2 ] && [ "$exitcode" -ne 0 ] && exit $exitcode
+                    echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+                working-directory: "cloud/stackit/server/terraform"
+                env:
+                    AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+                    AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+            -   name: Upload Github Artifact terraform.tfplan
+                uses: actions/upload-artifact@v4
+                with:
+                    name: terraform.tfplan
+                    path: cloud/stackit/server/terraform/terraform.tfplan
